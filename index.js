@@ -6,11 +6,11 @@ const mup = new Meetup()
 
 server.listen(3002)
 
+let topicsCounter = {}
+
 const INTERESTS = [
   'Software Development'
 ]
-
-let topicsCounter = {}
 
 // count the occurrences of each topic
 function countOccurrences(topicNames) {
@@ -21,8 +21,14 @@ function countOccurrences(topicNames) {
 }
 
 // sort the array of topics to create a top10
-function sortTopics(arrayOfTopics) {
- arrayOfTopics.sort((topicA, topicB) => (topicsCounter[topicB] - topicsCounter[topicA]))
+function topTen() {
+  return Object.keys(topicsCounter)
+    .sort((topicA, topicB) => (topicsCounter[topicB] - topicsCounter[topicA]))
+    .slice(0, 10)
+    .map(topic => ({
+      topic,
+      count: topicsCounter[topic]
+    }))
 }
 
 function isInterestingTopic(topics) {
@@ -33,30 +39,22 @@ function isInterestingTopic(topics) {
 
 io.on('connection', socket => {
  console.log('got connection')
-  mup.stream("/2/rsvps", stream => {
-    stream
-     .on("data", item => {
-       const topicNames = item.group.group_topics.map(topic => topic.topic_name )
+})
 
-       if (!isInterestingTopic(topicNames)) return
+mup.stream("/2/rsvps", stream => {
+  stream
+   .on("data", item => {
+     const topicNames = item.group.group_topics.map(topic => topic.topic_name )
 
-       console.log('---------------')
+     if (!isInterestingTopic(topicNames)) return
 
-       countOccurrences(topicNames)
+     countOccurrences(topicNames)
 
-       const arrayOfTopics = Object.keys(topicsCounter)
-       sortTopics(arrayOfTopics)
+     console.log(topTen())
 
-       let listWithCounter = arrayOfTopics.map(topic => {
-         return { topic: topic, counter: topicsCounter[topic]
-          }
-       }).slice(0,10)
+     io.emit('action', topTen())
 
-      console.log(listWithCounter)
-      io.emit('action', listWithCounter)
-
-    }).on("error", e => {
-          console.log("error! " + e)
-        });
-   })
-});
+  }).on("error", e => {
+        console.log("error! " + e)
+      });
+ })
