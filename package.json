@@ -1,0 +1,11 @@
+{
+  "name": "meetup_mashup",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "@github.com:Ju1111/meetup_mashup.git",
+  "author": "Julia",
+  "license": "MIT",
+  "dependencies": {
+    "meetup": "^0.1.0-SNAPSHOT"
+  }
+}
