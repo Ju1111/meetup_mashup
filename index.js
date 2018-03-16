@@ -39,6 +39,7 @@ function isInterestingTopic(topics) {
 
 io.on('connection', socket => {
  console.log('got connection')
+ io.emit('action', topTen())
 })
 
 mup.stream("/2/rsvps", stream => {
