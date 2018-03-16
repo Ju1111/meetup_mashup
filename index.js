@@ -3,14 +3,14 @@ var mup = new Meetup()
 
 let topicsCounter = {}
 
-
-
 mup.stream("/2/rsvps", stream => {
   stream
     .on("data", item => {
-      console.log("got item " + item)
+      console.log('-------------------')
 
       const topicNames = item.group.group_topics.map(topic => topic.topic_name)
+
+      if (topicNames.includes('Software Development')) {
 
       const arrayOfTopics = Object.keys(topicsCounter)
 
@@ -22,7 +22,6 @@ mup.stream("/2/rsvps", stream => {
           topicsCounter[name] = 1
         }
       })
-      // console.log(topicsCounter)
 
       arrayOfTopics.sort((topicA, topicB) => {
         if (topicsCounter[topicA] > topicsCounter[topicB]) {
@@ -35,13 +34,16 @@ mup.stream("/2/rsvps", stream => {
           return 0
         }
       })
-      // console.log(arrayOfTopics.slice(0, 10))
 
-      const nameCounter = arrayOfTopics.map(topic => {
-        return { topic: topic, counter: topicsCounter[topic]}
-      }).slice(0, 10)
+      const top10 = arrayOfTopics.slice(0, 10)
+
+      const nameCounter = top10.map(topic => ({
+        topic,
+        count: topicsCounter[topic]
+      }))
+
       console.log(nameCounter)
-
+    }
     }).on("error", e => {
        console.log("error! " + e)
     });
