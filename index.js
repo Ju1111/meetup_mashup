@@ -1,10 +1,16 @@
+var app = require('express')()
+var server = require('http').Server(app)
+var io = require('socket.io')(server)
 const Meetup = require("meetup")
 const mup = new Meetup()
-let topicsCounter = {}
+
+server.listen(3002)
 
 const INTERESTS = [
   'Software Development'
 ]
+
+let topicsCounter = {}
 
 // count the occurrences of each topic
 function countOccurrences(topicNames) {
@@ -15,14 +21,8 @@ function countOccurrences(topicNames) {
 }
 
 // sort the array of topics to create a top10
-function topTen() {
-  return Object.keys(topicsCounter)
-    .sort((topicA, topicB) => (topicsCounter[topicB] - topicsCounter[topicA]))
-    .slice(0, 10)
-    .map(topic => ({
-      topic,
-      count: topicsCounter[topic]
-    }))
+function sortTopics(arrayOfTopics) {
+ arrayOfTopics.sort((topicA, topicB) => (topicsCounter[topicB] - topicsCounter[topicA]))
 }
 
 function isInterestingTopic(topics) {
@@ -31,17 +31,32 @@ function isInterestingTopic(topics) {
     .length > 0
 }
 
-mup.stream("/2/rsvps", stream => {
-  stream
-    .on("data", item => {
-      const topicNames = item.group.group_topics.map(topic => topic.topic_name)
+io.on('connection', socket => {
+ console.log('got connection')
+  mup.stream("/2/rsvps", stream => {
+    stream
+     .on("data", item => {
+       const topicNames = item.group.group_topics.map(topic => topic.topic_name )
 
-      if (!isInterestingTopic(topicNames)) return
+       if (!isInterestingTopic(topicNames)) return
 
-      countOccurrences(topicNames)
+       console.log('---------------')
 
-      console.log(topTen())
+       countOccurrences(topicNames)
+
+       const arrayOfTopics = Object.keys(topicsCounter)
+       sortTopics(arrayOfTopics)
+
+       let listWithCounter = arrayOfTopics.map(topic => {
+         return { topic: topic, counter: topicsCounter[topic]
+          }
+       }).slice(0,10)
+
+      console.log(listWithCounter)
+      io.emit('action', listWithCounter)
+
     }).on("error", e => {
-       console.log("error! " + e)
-    });
+          console.log("error! " + e)
+        });
+   })
 });
